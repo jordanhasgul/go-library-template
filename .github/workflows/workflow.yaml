@@ -20,8 +20,13 @@ jobs:
     name: Check Go module is tidy
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout and setup Go repository
-        uses: ./.github/actions/setup-go-repository
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
 
       - name: Check tidiness
         run: go mod tidy && git diff --exit-code
@@ -30,8 +35,13 @@ jobs:
     name: Run linters
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout and setup Go repository
-        uses: ./.github/actions/setup-go-repository
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
@@ -50,9 +60,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - name: Checkout and setup Go repository
-        uses: ./.github/actions/setup-go-repository
+      - name: Check out repository
+        uses: actions/checkout@v4
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
       - name: Run Go test
         run: go test -v -race -cover -coverprofile=coverage.out -covermode=atomic ./...
 
@@ -69,8 +83,13 @@ jobs:
     name: Check for vulnerabilities
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout and setup Go repository
-        uses: ./.github/actions/setup-go-repository
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
