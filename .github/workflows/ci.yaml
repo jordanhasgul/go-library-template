@@ -20,6 +20,14 @@ jobs:
     name: Check Go module is tidy
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          
       - name: Check tidiness
         run: go mod tidy && git diff --exit-code
 
