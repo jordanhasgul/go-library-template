@@ -67,8 +67,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+
       - name: Run Go test
-        run: go test -v -race -cover -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v -race -cover -coverprofile coverage.out -covermode atomic ./...
 
       - name: Generate coverage report
         run: go tool cover -html=coverage.out -o coverage.html
