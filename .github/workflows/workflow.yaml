@@ -46,7 +46,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.59
+          version: v8.0.0
 
   test:
     name: Run tests
@@ -72,7 +72,7 @@ jobs:
         run: go test -v -race -cover -coverprofile coverage.out -covermode atomic ./...
 
       - name: Generate coverage report
-        run: go tool cover -html=coverage.out -o coverage.html
+        run: go tool cover -html coverage.out -o coverage.html
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
