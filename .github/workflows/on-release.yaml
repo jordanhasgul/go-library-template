@@ -1,0 +1,53 @@
+name: on-release
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Check for version increment
+        run: |
+          new_version=$(grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
+          if [ -z "new_version" ]; then
+              echo "Error: Could not find new version"
+              exit 1
+          fi
+          
+          old_version=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
+          if [ -z "$old_version" ]; then
+              echo "Error: Could not find old version"
+              exit 1
+          fi
+          
+          latest_version=$(printf "%s\n%s" "new_version" "old_version" | sort -V | tail -n1)
+          
+          has_new_version=false
+          if [ "latest_version" != "new_version" ]; then
+            echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+            has_new_version=true
+          fi
+          
+          echo "is_new_version=$has_new_version" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        if: steps.version_check.outputs.is_new_version == 'true'
+        run: |
+          new_version="v${{ steps.version_check.outputs.version }}"
+          
+          git tag $new_version
+          git push origin $new_version
