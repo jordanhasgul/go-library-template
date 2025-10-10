@@ -1,4 +1,4 @@
-name: ci
+name: on-pull-request
 
 on:
   push:
@@ -20,6 +20,14 @@ jobs:
     name: Check Go module is tidy
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
       - name: Check tidiness
         run: go mod tidy && git diff --exit-code
 
@@ -36,9 +44,9 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.59
+          version: v2.5.0
 
   test:
     name: Run tests
@@ -46,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        go-version: [ "stable", "oldstable" ]
+        go-version: [ 'stable', 'oldstable' ]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -54,19 +62,17 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
 
       - name: Run Go test
-        run: go test -v -race -cover -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v -race -cover -coverprofile coverage.out -covermode atomic ./...
 
       - name: Generate coverage report
-        run: go tool cover -html=coverage.out -o coverage.html
+        run: go tool cover -html coverage.out -o coverage.html
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -78,10 +84,10 @@ jobs:
     name: Check for vulnerabilities
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository code
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
