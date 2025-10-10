@@ -126,7 +126,7 @@ jobs:
             has_new_version=true
           fi
           
-          files_changed=$(git diff --name-only $base_ref...HEAD | grep -v "^version.go$")
+          files_changed=$(git --no-pager diff --name-only HEAD $base_ref | grep -v "^version.go$")
           
           post_reminder=false
           if [[ -n "$files_changed" && "$version_changed" != true ]]; then
@@ -140,9 +140,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          ### 🤖 Version Update Reminder
+          comment_body="### 🤖 Version Update Reminder
           
-          Hey! I've noticed that tyou've made changes to the library, but the library version hasn't been updated. Please 
-          remember to update it in `version.go`!
-
-          **NOTE**: *This comment is posted by a bot and will be automatically updated or removed if the version is updated.*
+          Hey! I've noticed that you've made changes to the library, but the library version hasn't been updated. Please 
+          remember to update it in `version.go`!"
+          
+          gh pr comment ${PR_NUMBER} --body "$comment_body"
