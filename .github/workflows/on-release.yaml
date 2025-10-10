@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   release:
-    name: Create Release
+    name: Create release
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -21,33 +21,38 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Check for version increment
+        id: version_increment_check
         run: |
           new_version=$(grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
-          if [ -z "new_version" ]; then
+          if [[ -z "new_version" ]]; then
               echo "Error: Could not find new version"
               exit 1
           fi
           
           old_version=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
-          if [ -z "$old_version" ]; then
-              echo "Error: Could not find old version"
-              exit 1
+          if [[ -z "$old_version" ]]; then
+              # echo "Error: Could not find old version"
+              # exit 1
+              old_version="0.0.0"
           fi
           
-          latest_version=$(printf "%s\n%s" "new_version" "old_version" | sort -V | tail -n1)
+          latest_version=$(printf "%s\n%s" "$new_version" "$old_version" | sort -V | tail -n1)
           
           has_new_version=false
-          if [ "latest_version" != "new_version" ]; then
+          if [[ "$new_version" == "$latest_version" && "$new_version" != "$old_version" ]]; then
             echo "new_version=${new_version}" >> $GITHUB_OUTPUT
             has_new_version=true
           fi
           
-          echo "is_new_version=$has_new_version" >> $GITHUB_OUTPUT
+          echo "has_new_version=$has_new_version" >> $GITHUB_OUTPUT
 
-      - name: Create release
-        if: steps.version_check.outputs.is_new_version == 'true'
+      - name: Create tag
+        if: steps.version_increment_check.outputs.has_new_version == 'true'
         run: |
-          new_version="v${{ steps.version_check.outputs.version }}"
+          new_version="v${{ steps.version_increment_check.outputs.new_version }}"
           
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+    
           git tag $new_version
           git push origin $new_version
