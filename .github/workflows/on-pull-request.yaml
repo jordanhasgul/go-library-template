@@ -101,6 +101,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Check for version update
         id: version_update_check
@@ -111,9 +113,7 @@ jobs:
               exit 1
           fi
           
-          base_ref="origin/${{ github.base_ref }}"
-          
-          old_version=$(git show "$base_ref:version.go" | grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
+          old_version=$(git show "origin/main:version.go" | grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
           if [[ -z "$old_version" ]]; then
               old_version="0.0.0"
           fi
@@ -126,7 +126,7 @@ jobs:
             has_new_version=true
           fi
           
-          files_changed=$(git --no-pager diff --name-only HEAD $base_ref | grep -v "^version.go$")
+          files_changed=$(git --no-pager diff --name-only HEAD origin/main | grep -v "^version.go$")
           
           post_reminder=false
           if [[ -n "$files_changed" && "$version_changed" != true ]]; then
@@ -134,6 +134,7 @@ jobs:
           fi
           
           echo "post_reminder=$post_reminder" >> $GITHUB_OUTPUT
+
       - name: Post reminder to update library version
         if: steps.version_update_check.outputs.post_reminder == 'true'
         env:

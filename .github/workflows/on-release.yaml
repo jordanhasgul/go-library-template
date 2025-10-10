@@ -29,9 +29,7 @@ jobs:
               exit 1
           fi
           
-          base_ref="origin/${{ github.base_ref }}"
-          
-          old_version=$(git show "$base_ref:version.go" | grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
+          old_version=$(git show "origin/main:version.go" | grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
           if [[ -z "$old_version" ]]; then
               old_version="0.0.0"
           fi
