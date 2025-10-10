@@ -144,6 +144,6 @@ jobs:
           comment_body="### 🤖 Version Update Reminder
           
           Hey! I've noticed that you've made changes to the library, but the library version hasn't been updated. Please 
-          remember to update it in `version.go`!"
+          remember to update it in \`version.go\`!"
           
           gh pr comment ${PR_NUMBER} --body "$comment_body"
