@@ -94,3 +94,55 @@ jobs:
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
+
+  remind-version-update:
+    name: Remind to update library version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check for version update
+        id: version_update_check
+        run: |
+          new_version=$(grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
+          if [[ -z "new_version" ]]; then
+              echo "Error: Could not find new version"
+              exit 1
+          fi
+          
+          base_ref="origin/${{ github.base_ref }}"
+          
+          old_version=$(git show "$base_ref:version.go" | grep -o 'Version = "[^"]*' version.go | grep -o '[^"]*$')
+          if [[ -z "$old_version" ]]; then
+              old_version="0.0.0"
+          fi
+          
+          latest_version=$(printf "%s\n%s" "$new_version" "$old_version" | sort -V | tail -n1)
+          
+          version_changed=false
+          if [[ "$new_version" == "$latest_version" && "$new_version" != "$old_version" ]]; then
+            echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+            has_new_version=true
+          fi
+          
+          files_changed=$(git diff --name-only $base_ref...HEAD | grep -v "^version.go$")
+          
+          post_reminder=false
+          if [[ -n "$files_changed" && "$version_changed" != true ]]; then
+            post_reminder=true
+          fi
+          
+          echo "post_reminder=$post_reminder" >> $GITHUB_OUTPUT
+      - name: Post reminder to update library version
+        if: steps.version_update_check.outputs.post_reminder == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          ### 🤖 Version Update Reminder
+          
+          Hey! I've noticed that tyou've made changes to the library, but the library version hasn't been updated. Please 
+          remember to update it in `version.go`!
+
+          **NOTE**: *This comment is posted by a bot and will be automatically updated or removed if the version is updated.*
