@@ -134,15 +134,25 @@ jobs:
           echo "post_reminder=$post_reminder" >> $GITHUB_OUTPUT
 
       - name: Post reminder to update library version
-        if: steps.version_update_check.outputs.post_reminder == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          comment_tag=""
           comment_body="### 🤖 Version Update Reminder
           
           Hey! I've noticed that you've made changes to the library, but the library version hasn't been updated. 
           
-          If it should be updated, please remember to do by updating \`version.go\`!"
+          If it should be updated, please remember to do by updating \`version.go\`!
           
-          gh pr comment ${PR_NUMBER} --body "$comment_body"
+          ${comment_tag}
+          "
+          
+          comment_id=$(gh pr view ${{ github.event.pull_request.number }} --json comments | \
+            jq --raw-output ".comments[] |select(.body | contains(\"${comment_tag}\")) | .id")
+          if [[ -n "$comment_id" ]]; then
+            gh pr comment ${{ github.event.pull_request.number }} --delete "$comment_id"
+          fi
+          
+          if [[ -z "$comment_id" && "${{ steps.version_update_check.outputs.post_reminder }}" == "true" ]]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body "$comment_body"
+          fi
