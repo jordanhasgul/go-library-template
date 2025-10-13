@@ -8,9 +8,89 @@ permissions:
   contents: write
 
 jobs:
+  check-gomod:
+    name: Check Go module is tidy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Check tidiness
+        run: go mod tidy && git diff --exit-code
+
+  lint:
+    name: Run linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+
+  test:
+    name: Run tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        go-version: [ 'stable', 'oldstable' ]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run Go test
+        run: go test -v -race -cover -coverprofile coverage.out -covermode atomic ./...
+
+      - name: Generate coverage report
+        run: go tool cover -html coverage.out -o coverage.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.os }}-${{ matrix.go-version }}
+          path: coverage.html
+
+  check-vulns:
+    name: Check for vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
+
   release:
     name: Create release
     runs-on: ubuntu-latest
+    if: success()
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -43,6 +123,7 @@ jobs:
           fi
           
           echo "version_changed=$version_changed" >> $GITHUB_OUTPUT
+
       - name: Create tag
         if: steps.version_update_check.outputs.version_changed == 'true'
         run: |
