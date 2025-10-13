@@ -134,6 +134,7 @@ jobs:
           echo "post_reminder=$post_reminder" >> $GITHUB_OUTPUT
 
       - name: Post reminder to update library version
+        if: steps.version_update_check.outputs.post_reminder == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
