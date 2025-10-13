@@ -86,10 +86,11 @@ jobs:
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
-        
+
   release:
     name: Create release
     runs-on: ubuntu-latest
+    if: success()
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
